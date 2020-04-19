@@ -1,23 +1,34 @@
 import java.util.*;
 
+/**
+ * A static class which makes a wordsearch board from a given list of words
+ */
 public class BoardMaker {
 
+    /** allows random numbers to be generated **/
     private static final Random RANDOM = new Random();
 
+    /** a list of words. Has multiple uses throughout the class **/
     private static ArrayList<Word> words = new ArrayList<>();
 
+    /** true if the a direction iteration has been made, false otherwise **/
     private static boolean haveIterated = false;
 
     /** the shortest length of a long word **/
     private static final int longWordLength = 11;
+    /** a list of the long words for this board **/
     private static ArrayList<String> longWords = new ArrayList<>();
 
-
+    /** the number of short words to include per board segment **/
     private static final int shortWordsPerGroup = 4;
+    /** a list of groups of short words for each segment **/
     private static ArrayList<String[]> shortWords = new ArrayList<>();
+    /** a list of segments to be combined to a megaboard **/
     private static ArrayList<Board> boards = new ArrayList<>();
+    /** the result of combined segments **/
     private static Board megaBoard;
 
+    /** makes a wordsearch from a given list of words **/
     public static Board makeWordsearch(ArrayList<String> allWordsStrs) {
         separateWords(allWordsStrs);
         populateBoards();
@@ -27,6 +38,9 @@ public class BoardMaker {
             board.shuffle();
         }
 
+        if (boards.size() > 20) {
+            throw new IllegalArgumentException("Too many words have been used.");
+        }
         megaBoard = joinBoardSegment(boards);
         addLongWords();
 
@@ -35,32 +49,12 @@ public class BoardMaker {
         }
 
         megaBoard.shuffle();
-        megaBoard.mkSquare();
         megaBoard.strip();
         megaBoard.updatePlacedWords();
         return megaBoard;
     }
 
-    private static void completeBoard() {
-        for (Word longWord : words) {
-            int r = RANDOM.nextInt(2);
-            if (megaBoard.xSize() > megaBoard.ySize()) {
-                if (r==0) {
-                    megaBoard = verticalJoin(megaBoard, wordToHBoard(longWord.getName()));
-                } else {
-                    megaBoard = verticalJoin(wordToHBoard(longWord.getName()), megaBoard);
-                }
-            } else {
-                if (r==1) {
-                    megaBoard = horizontalJoin(megaBoard, wordToVBoard(longWord.getName()));
-                } else {
-                    megaBoard  = horizontalJoin(wordToVBoard(longWord.getName()), megaBoard);
-                }
-            }
-
-        }
-    }
-
+    /** looks for places to include long words inside of otherwise complete wordsearch **/
     private static void addLongWords() {
         words.clear();
         for (String word : longWords) {
@@ -102,6 +96,28 @@ public class BoardMaker {
         wordsToRemove.clear();
     }
 
+    /** adds remaining long words to edge of board **/
+    private static void completeBoard() {
+        for (Word longWord : words) {
+            int r = RANDOM.nextInt(2);
+            if (megaBoard.xSize() > megaBoard.ySize()) {
+                if (r==0) {
+                    megaBoard = verticalJoin(megaBoard, wordToHBoard(longWord.getName()));
+                } else {
+                    megaBoard = verticalJoin(wordToHBoard(longWord.getName()), megaBoard);
+                }
+            } else {
+                if (r==1) {
+                    megaBoard = horizontalJoin(megaBoard, wordToVBoard(longWord.getName()));
+                } else {
+                    megaBoard  = horizontalJoin(wordToVBoard(longWord.getName()), megaBoard);
+                }
+            }
+
+        }
+    }
+
+    /** joins together given board segments **/
     private static Board joinBoardSegment(ArrayList<Board> boardSegments) {
         Board output = null;
         switch (boardSegments.size()) {
@@ -140,6 +156,7 @@ public class BoardMaker {
         return output;
     }
 
+    /** joins together the specified number of given board segments **/
     private static Board join2Boards(Board board1, Board board2) {
         Board output;
         if ((board1.xSize()+board2.xSize()) > (board1.xSize()+board2.xSize())) {
@@ -231,7 +248,9 @@ public class BoardMaker {
             return horizontalJoin(temp, verticalJoin(boards.get(2), boards.get(3)));
         }
     }
+    /****/
 
+    /** converts a word to a vertical board and returns the board **/
     private static Board wordToVBoard(String givenStr) {
         String word = givenStr.replaceAll(" ", "").toUpperCase();
         String[][] board = new String[1][word.length()];
@@ -247,6 +266,7 @@ public class BoardMaker {
         return new Board(board);
     }
 
+    /** converts a word to a horizontal board and returns the board **/
     private static Board wordToHBoard(String givenStr) {
         String word = givenStr.replaceAll(" ", "").toUpperCase();
         String[][] board = new String[word.length()][1];
@@ -262,6 +282,7 @@ public class BoardMaker {
         return new Board(board);
     }
 
+    /** joins two boards together horizontally **/
     private static Board horizontalJoin(Board left, Board right) {
         if (left.ySize() < right.ySize()) {
             left.verticalPad(right.ySize());
@@ -284,6 +305,7 @@ public class BoardMaker {
         return new Board(output);
     }
 
+    /** joins to boards together vertically **/
     private static Board verticalJoin(Board top, Board bottom) {
         if (top.xSize() < bottom.xSize()) {
             top.horizontalPad(bottom.xSize());
@@ -307,6 +329,7 @@ public class BoardMaker {
         return new Board(output);
     }
 
+    /** separates words into long words and group of short words **/
     private static void separateWords(ArrayList<String> allWordsStrs) {
         for (String word : allWordsStrs) {
             if (word.length() >= longWordLength) {
@@ -335,6 +358,7 @@ public class BoardMaker {
         }
     }
 
+    /** makes a board for every group of short words and adds it it to the boards list **/
     private static void populateBoards() {
         int dim, totalLetters, xSize, ySize;
         for (String[] group : shortWords) {
@@ -377,6 +401,7 @@ public class BoardMaker {
 
     }
 
+    /** makes a board of given dimension from an array of words **/
     private static String[][] mkBoard(String[] wordsStrs, int xSize, int ySize) {
         Arrays.sort(wordsStrs, Comparator.comparing(String::length));
         words.clear();
@@ -408,6 +433,7 @@ public class BoardMaker {
         throw new IllegalArgumentException("No board was created for this dimension.");
     }
 
+    /** iterates the directions of the words **/
     private static void iterateDirections() {
         int indexToIterate = -1;
         for (int i=0; i<words.size(); i++) {
@@ -425,6 +451,7 @@ public class BoardMaker {
         }
     }
 
+    /** removes null elements from a string array **/
     private static String[] removeNulls(String[] strArr) {
         ArrayList<String> tempArrList = new ArrayList<>();
 

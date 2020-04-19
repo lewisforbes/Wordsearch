@@ -2,29 +2,118 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 
+/**
+ * A class to hold information about a board (wordsearch)
+ */
 public class Board {
 
+    /** an object to generate random numbers **/
     private static final Random RANDOM = new Random();
 
+    /** a 2D array representation of the board, where unfilled squares are null **/
     private String[][] board;
+    /** a list of the positions and directions of all words on the board **/
     private ArrayList<Word> placedWords = new ArrayList<>();
 
+    /** makes a new board object **/
     public Board(String[][] board) {
         this.board = board;
     }
 
+    /** returns the board as a string array **/
     public String[][] getBoard() {
         return board;
     }
 
+    /** returns the board's x dimension **/
     public int xSize() {
         return board.length;
     }
 
+    /** returns the board's y dimension **/
     public int ySize() {
         return board[0].length;
     }
 
+    /** returns the unsolved board as a string **/
+    public String boardToString() {
+        int xSize = xSize();
+        int ySize = ySize();
+        String[][] board = getBoard();
+        String output = "";
+
+        for (int y = (ySize - 1); y >= 0; y--) {
+            for (int x = 0; x <= (xSize - 1); x++) {
+                if (board[x][y] == null) {
+                    output += getBlankChar() + " ";
+                } else {
+                    output += board[x][y] + " ";
+                }
+            }
+            output += "\n";
+        }
+        return output;
+    }
+
+    /** returns the board's solution as a string **/
+    public String getSolution() {
+        int xSize = xSize();
+        int ySize = ySize();
+        String[][] board = getBoard();
+        String output = "";
+
+        for (int y = (ySize - 1); y >= 0; y--) {
+            for (int x = 0; x <= (xSize - 1); x++) {
+                if (board[x][y] == null) {
+                    output += "-" + " ";
+                } else {
+                    output += board[x][y] + " ";
+                }
+            }
+            output += "\n";
+        }
+        return output;
+    }
+
+    /** [UNUSED] returns the solved board as a string **/
+    public String boardToStringWithSolved(ArrayList<String> positions) {
+        int xSize = xSize();
+        int ySize = ySize();
+        String[][] board = getBoard();
+        String output = "";
+
+        String currentPos;
+
+        for (int y = (ySize - 1); y >= 0; y--) {
+            for (int x = 0; x <= (xSize - 1); x++) {
+                currentPos = x + " " + y;
+                if (positions.contains(currentPos)) {
+                    output += toFoundFont(board[x][y]) + " ";
+                } else {
+                    if (board[x][y] == null) {
+                        output += toUnfoundFont(getBlankChar()) + " ";
+                    } else {
+                        output += toUnfoundFont(board[x][y]) + " ";
+                    }
+                }
+            }
+            output += "\n";
+        }
+        return output;
+    }
+
+    /** updates placedWords to the current board **/
+    public void updatePlacedWords() {
+        placedWords = WordAdder.getPlacedWords();
+        Collections.shuffle(placedWords);
+    }
+
+    /** returns the placedWords list **/
+    public ArrayList<Word> getPlacedWords() {
+        return placedWords;
+    }
+
+    /** removes any rows or columns that are completely blank **/
     public void strip() {
         ArrayList<Integer> rowsToRemove = new ArrayList<>();
         ArrayList<Integer> colsToRemove = new ArrayList<>();
@@ -63,6 +152,17 @@ public class Board {
         board = output;
     }
 
+    /** adds in blank rows or columns until the board is square **/
+    public void mkSquare() {
+        if (xSize() > ySize()) {
+            verticalPad(xSize());
+        }
+        if (ySize() > xSize()) {
+            horizontalPad(ySize());
+        }
+    }
+
+    /** adds in blank rows in until the y dimension is the provided size **/
     public void verticalPad(int ySizeGoal) {
         if (ySizeGoal < ySize()) {
             throw new IllegalArgumentException("The ySizeGoal is smaller than the ySize");
@@ -84,6 +184,7 @@ public class Board {
         board = newBoard;
     }
 
+    /** adds in blank columns in until the x dimension is the provided size **/
     public void horizontalPad(int xSizeGoal) {
         if (xSizeGoal < xSize()) {
             throw new IllegalArgumentException("The ySizeGoal is smaller than the ySize");
@@ -105,6 +206,7 @@ public class Board {
         board = newBoard;
     }
 
+    /** flips the board randomly, so the solution is the same but the positions are different **/
     public void shuffle() {
         switch (RANDOM.nextInt(4)) {
             case 0:
@@ -126,6 +228,7 @@ public class Board {
         throw new IllegalArgumentException("Random number was not 0-3");
     }
 
+    /** mirrors every x coordinate **/
     private void flipX() {
         String[][] output = new String[xSize()][ySize()];
         for (int y = 0; y < ySize(); y++) {
@@ -136,6 +239,7 @@ public class Board {
         board = output;
     }
 
+    /** mirrors every y coordinate **/
     private void flipY() {
         String[][] output = new String[xSize()][ySize()];
         for (int y=0; y<ySize(); y++) {
@@ -146,15 +250,7 @@ public class Board {
         board = output;
     }
 
-    public void mkSquare() {
-        if (xSize() > ySize()) {
-            verticalPad(xSize());
-        }
-        if (ySize() > xSize()) {
-            horizontalPad(ySize());
-        }
-    }
-
+    /** returns true is a row is completely null, false otherwise **/
     private boolean nullRow(int y) {
         for (int x=0; x<xSize(); x++) {
             if (board[x][y] != null) {
@@ -164,6 +260,7 @@ public class Board {
         return true;
     }
 
+    /** returns true if a column is completely null, false otherwise **/
     private boolean nullCol(int x) {
         for (int y=0; y<ySize(); y++) {
             if (board[x][y] != null) {
@@ -173,65 +270,29 @@ public class Board {
         return true;
     }
 
-    public void updatePlacedWords() {
-        placedWords = WordAdder.getPlacedWords();
-        Collections.shuffle(placedWords);
-    }
-
-    public String boardToString() {
-        int xSize = xSize();
-        int ySize = ySize();
-        String[][] board = getBoard();
-        String output = "";
-
-        for (int y = (ySize - 1); y >= 0; y--) {
-            for (int x = 0; x <= (xSize - 1); x++) {
-                if (board[x][y] == null) {
-                    output += getBlankChar() + " ";
-                } else {
-                    output += board[x][y] + " ";
-                }
-            }
-            output += "\n";
+    /** converts a letter to its equivalent in the font for letters that haven't been found **/
+    private String toUnfoundFont(String letter) {
+        int alphPos = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(letter);
+        if (alphPos == -1) {
+            return letter;
         }
-        return output;
+        String[] newAlph = new String[] {"\uD83C\uDD50", "\uD83C\uDD51", "\uD83C\uDD52", "\uD83C\uDD53", "\uD83C\uDD54", "\uD83C\uDD55", "\uD83C\uDD56", "\uD83C\uDD57", "\uD83C\uDD58", "\uD83C\uDD59", "\uD83C\uDD5A", "\uD83C\uDD5B", "\uD83C\uDD5C", "\uD83C\uDD5D", "\uD83C\uDD5E", "\uD83C\uDD5F", "\uD83C\uDD60", "\uD83C\uDD61", "\uD83C\uDD62", "\uD83C\uDD63", "\uD83C\uDD64", "\uD83C\uDD65", "\uD83C\uDD66", "\uD83C\uDD67", "\uD83C\uDD68", "\uD83C\uDD69"};
+        return "" + newAlph[alphPos];
     }
 
-    public String boardToStringWithSolved(ArrayList<String> positions) {
-        String[][] originalBoard = board;
-        String output;
-        int currentX, currentY;
-
-        for (String pos : positions) {
-            currentX = Integer.parseInt(pos.split( " ")[0]);
-            currentY = Integer.parseInt(pos.split( " ")[1]);
-
-            board[currentX][currentY] = board[currentX][currentY].toLowerCase();
+    /** converts a letter to its equivalent in the font for letters that have been found **/
+    private String toFoundFont(String letter) {
+        int alphPos = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".indexOf(letter);
+        if (alphPos == -1) {
+            throw new IllegalArgumentException("alphPos = -1, letter = " + letter);
         }
-
-        output = boardToString();
-        board = originalBoard;
-        return output;
+        String newAlph = "ⒶⒷⒸⒹⒺⒻⒼⒽⒾⒿⓀⓁⓂⓄⓃⓅⓆⓇⓈⓉⓊⓋⓌⓍⓎⓏ";
+        return "" + newAlph.charAt(alphPos);
     }
 
-    public ArrayList<Word> getPlacedWords() {
-        return placedWords;
-    }
-
+    /** returns a populated blank square on the board **/
     private String getBlankChar() {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return "" + alphabet.charAt(RANDOM.nextInt(alphabet.length()));
-    }
-
-    @Override
-    public Board clone() {
-        Board board = null;
-        try {
-            board = (Board) super.clone();
-        } catch (CloneNotSupportedException e) {
-            board = new Board(this.board.clone());
-        }
-        board.placedWords = (ArrayList<Word>) this.placedWords.clone();
-        return board;
     }
 }
