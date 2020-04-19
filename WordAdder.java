@@ -130,7 +130,7 @@ public class WordAdder {
         placedWords.add(word);
     }
 
-    private static int[] getXTrail(Word word) {
+    public static int[] getXTrail(Word word) {
         ArrayList<Direction> direction = word.getDirection();
         int xInit = word.getX();
 
@@ -161,7 +161,7 @@ public class WordAdder {
         return xTrail;
     }
 
-    private static int[] getYTrail(Word word) {
+    public static int[] getYTrail(Word word) {
         ArrayList<Direction> direction = word.getDirection();
 
         int yInit = word.getY();

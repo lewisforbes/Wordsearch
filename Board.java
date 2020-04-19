@@ -178,23 +178,7 @@ public class Board {
         Collections.shuffle(placedWords);
     }
 
-    public String deleteme() {
-        String output = "";
-        output += placedWords.get(0).getName() + " ";
-        output += placedWords.get(0).getPosition() + " ";
-        output += placedWords.get(0).getDirection();
-        return output;
-    }
-
-    @Override
-    public String toString() {
-        String output = "";
-        output += placedWords + "\n\n";
-        output += boardToString();
-        return output;
-    }
-
-    private String boardToString() {
+    public String boardToString() {
         int xSize = xSize();
         int ySize = ySize();
         String[][] board = getBoard();
@@ -213,8 +197,41 @@ public class Board {
         return output;
     }
 
+    public String boardToStringWithSolved(ArrayList<String> positions) {
+        String[][] originalBoard = board;
+        String output;
+        int currentX, currentY;
+
+        for (String pos : positions) {
+            currentX = Integer.parseInt(pos.split( " ")[0]);
+            currentY = Integer.parseInt(pos.split( " ")[1]);
+
+            board[currentX][currentY] = board[currentX][currentY].toLowerCase();
+        }
+
+        output = boardToString();
+        board = originalBoard;
+        return output;
+    }
+
+    public ArrayList<Word> getPlacedWords() {
+        return placedWords;
+    }
+
     private String getBlankChar() {
         String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
         return "" + alphabet.charAt(RANDOM.nextInt(alphabet.length()));
+    }
+
+    @Override
+    public Board clone() {
+        Board board = null;
+        try {
+            board = (Board) super.clone();
+        } catch (CloneNotSupportedException e) {
+            board = new Board(this.board.clone());
+        }
+        board.placedWords = (ArrayList<Word>) this.placedWords.clone();
+        return board;
     }
 }

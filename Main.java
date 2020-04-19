@@ -11,15 +11,36 @@ public class Main {
 
     private static final int wordsToFind = 15;
     private static Board board;
+    private static ArrayList<String> foundPositions = new ArrayList<>();
 
     public static void main(String[] args) {
         System.out.println("Enter topic of wordsearch:");
-        String topic = input.nextLine().strip().replaceAll(" ", "+");
-
+        //String topic = input.nextLine().strip().replaceAll(" ", "+");
+        String topic = "dog"; // TODO delete
+        System.out.println(topic + "\n");
         ArrayList<String> words = getWords(topic);
+
         board = BoardMaker.makeWordsearch(words);
-        System.out.println(board);
-        System.out.println(board.deleteme());
+        System.out.println(board.boardToString());
+        String[][] fullBoard = cloneArray(board.getBoard());
+        ArrayList<Word> solution = Solver.solve(board.clone(), board.getPlacedWords());
+        System.out.println(solution);
+
+        int[] currentXTrail, currentYTrail;
+        for (Word word : solution) {
+            currentXTrail = WordAdder.getXTrail(word);
+            currentYTrail = WordAdder.getYTrail(word);
+
+            if (currentXTrail.length != currentYTrail.length) {
+                throw new IllegalArgumentException("xTrail length: " + currentXTrail.length + ", yTrail length: " + currentYTrail.length);
+            }
+
+            for (int i=0; i<currentXTrail.length; i++) {
+                foundPositions.add(currentXTrail[i] + " " + currentYTrail[i]);
+            }
+        }
+
+        System.out.println(new Board(fullBoard).boardToStringWithSolved(foundPositions));
     }
 
     private static ArrayList<String> getWords(String topic) {
@@ -63,5 +84,14 @@ public class Main {
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to retrieve data.");
         }
+    }
+
+    public static String[][] cloneArray(String[][] src) {
+        int length = src.length;
+        String[][] target = new String[length][src[0].length];
+        for (int i = 0; i < length; i++) {
+            System.arraycopy(src[i], 0, target[i], 0, src[i].length);
+        }
+        return target;
     }
 }

@@ -8,9 +8,9 @@ public class Word {
     private int ySize;
 
     public String position;
-    public int xMin;
+    private int xMin;
     private int xMax;
-    public int yMin;
+    private int yMin;
     private int yMax;
 
     public ArrayList<ArrayList<Direction>> directionIteration;
@@ -143,5 +143,13 @@ public class Word {
     @Override
     public String toString() {
         return name;
+    }
+
+    public void setDirection(ArrayList<Direction> direction) {
+        this.direction = direction;
+    }
+
+    public void setPosition(String position) {
+        this.position = position;
     }
 }
