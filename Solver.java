@@ -9,23 +9,70 @@ public class Solver {
 
     private static final int errorInt = -1;
 
-    public static ArrayList<Word> solve(Board givenBoard, ArrayList<Word> words) {
-        board = givenBoard.getBoard().clone();
+    public static ArrayList<Word> solve(Board givenBoard, ArrayList<String> givenWordsToFind) {
+        board = Utils.clone2DArray(givenBoard.getBoard());
         xSize = givenBoard.xSize();
         ySize = givenBoard.ySize();
-        replaceNulls("!");
-
-        ArrayList<String> wordsToFind = new ArrayList<>();
-        for (Word word : words) {
-            wordsToFind.add(word.getName());
-        }
+        replaceNulls(".");
+        ArrayList<String> wordsToFind = Utils.cloneStrArrLst(givenWordsToFind);
+        wordsToFind = Utils.removeSpacesFromArrLst(wordsToFind);
+        wordsToFind = Utils.capitaliseArrLst(wordsToFind);
         findWords(wordsToFind);
         if (foundWords.size() < wordsToFind.size()) {
             throw new IllegalArgumentException(
                     "wordsToFind.size(): " + wordsToFind.size() + " - foundWords.size(): " + foundWords.size()
-                            + "\nfoundWords: " + foundWords);
+                            + "\nfoundWords: " + foundWords + "\nwordsToFind: " + wordsToFind);
         }
-        return foundWords;
+        return removeDuplicates(foundWords);
+    }
+
+    /** removes words from list that are contained in other ones **/
+    private static ArrayList<Word> removeDuplicates(ArrayList<Word> originalList) {
+        ArrayList<Integer> duplicatesIndexes = new ArrayList<>();
+        ArrayList<String> originalNames = new ArrayList<>();
+        for (Word word : originalList) {
+            originalNames.add(word.getName());
+        }
+
+        for (int i=0; i<originalNames.size(); i++) {
+            if (originalNames.subList(0, i).contains(originalNames.get(i))) {
+                duplicatesIndexes.add(i);
+            } else if ((i+1) != originalNames.size()) {
+                if (originalNames.subList((i + 1), (originalList.size())).contains(originalNames.get(i))) {
+                    duplicatesIndexes.add(i);
+                }
+            }
+        }
+
+        ArrayList<Word> duplicates = new ArrayList<>();
+        for (int i : duplicatesIndexes) {
+            duplicates.add(originalList.get(i));
+        }
+
+        boolean substring;
+        ArrayList<Word> wordsToRemove = new ArrayList<>();
+        for (Word word : duplicates) {
+            substring = false;
+            for (String wordName : originalNames) {
+                if (wordName.contains(word.getName())) {
+                    substring = true;
+                }
+            }
+            if (substring) {
+                wordsToRemove.add(word);
+            }
+        }
+        for (Word word : wordsToRemove) {
+            duplicates.remove(word);
+        }
+
+        ArrayList<Word> output = new ArrayList<>();
+        for (Word word : originalList) {
+            if (!duplicates.contains(word)) {
+                output.add(word);
+            }
+        }
+        return output;
     }
 
     private static void replaceNulls(String toReplaceWith) {

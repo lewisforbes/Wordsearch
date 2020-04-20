@@ -1,3 +1,4 @@
+import javax.print.DocFlavor;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
@@ -14,6 +15,8 @@ public class Board {
     private String[][] board;
     /** a list of the positions and directions of all words on the board **/
     private ArrayList<Word> placedWords = new ArrayList<>();
+    /** a list of the words on the board (for printing) **/
+    private ArrayList<String> namesOfWords = new ArrayList<>();
 
     /** makes a new board object **/
     public Board(String[][] board) {
@@ -35,19 +38,62 @@ public class Board {
         return board[0].length;
     }
 
-    /** returns the unsolved board as a string **/
+
+
+    /** returns the unsolved board as a string, with the words on the side **/
     public String boardToString() {
+        if ((namesOfWords == null) || (namesOfWords.size() == 0)) {
+            throw new IllegalArgumentException("There is nothing in namesOfWords");
+        }
+
+        int colsOfNofW = (int) Math.ceil((namesOfWords.size())/((double) ySize()-2));
+        int padding = 5;
+        int maxNMLength = 0;
+        for (String name : namesOfWords) {
+            if (name.length() > maxNMLength) {
+                maxNMLength = name.length();
+            }
+        }
+
         int xSize = xSize();
         int ySize = ySize();
         String[][] board = getBoard();
         String output = "";
 
+        boolean headingPrinted = false;
+        int nameOfWordOn = 0;
         for (int y = (ySize - 1); y >= 0; y--) {
             for (int x = 0; x <= (xSize - 1); x++) {
                 if (board[x][y] == null) {
                     output += getBlankChar() + " ";
                 } else {
                     output += board[x][y] + " ";
+                }
+            }
+            output += " ".repeat(padding);
+
+            if (y==(ySize-1)) {
+                if (!headingPrinted) {
+                    output += "Words to Find:\n";
+                }
+                continue;
+            }
+
+            if (y==(ySize-2)) {
+                if (!headingPrinted) {
+                    output += "\n";
+                    headingPrinted = true;
+                }
+                continue;
+            }
+            if (nameOfWordOn < namesOfWords.size()) {
+                for (int i=0; i<colsOfNofW; i++) {
+                    output += namesOfWords.get(nameOfWordOn);
+                    output += "   " + " ".repeat(maxNMLength-namesOfWords.get(nameOfWordOn).length());
+                    nameOfWordOn++;
+                    if (!(nameOfWordOn<namesOfWords.size())) {
+                        break;
+                    }
                 }
             }
             output += "\n";
@@ -75,26 +121,40 @@ public class Board {
         return output;
     }
 
-    /** [UNUSED] returns the solved board as a string **/
-    public String boardToStringWithSolved(ArrayList<String> positions) {
-        int xSize = xSize();
-        int ySize = ySize();
-        String[][] board = getBoard();
+    /** returns a board containing all blanks apart form the words given **/
+    public String getSolutionOfWords(ArrayList<Word> words) {
+        ArrayList<int[]> xTrails = new ArrayList<>();
+        ArrayList<int[]> yTrails = new ArrayList<>();
+        for (Word word : words) {
+            xTrails.add(WordAdder.getXTrail(word));
+            yTrails.add(WordAdder.getYTrail(word));
+        }
+
+        ArrayList<String[]> coordinates = new ArrayList<>();
+        String[] currentCoordinates;
+        for (int w=0; w<words.size(); w++) {
+            currentCoordinates = new String[xTrails.get(w).length];
+            for (int i = 0; i < currentCoordinates.length; i++) {
+                currentCoordinates[i] = (xTrails.get(w)[i] + " " + yTrails.get(w)[i]);
+            }
+            coordinates.add(currentCoordinates);
+        }
         String output = "";
-
         String currentPos;
+        boolean match;
 
-        for (int y = (ySize - 1); y >= 0; y--) {
-            for (int x = 0; x <= (xSize - 1); x++) {
+        for (int y = (ySize() - 1); y >= 0; y--) {
+            for (int x = 0; x <= (xSize() - 1); x++) {
                 currentPos = x + " " + y;
-                if (positions.contains(currentPos)) {
-                    output += toFoundFont(board[x][y]) + " ";
-                } else {
-                    if (board[x][y] == null) {
-                        output += toUnfoundFont(getBlankChar()) + " ";
-                    } else {
-                        output += toUnfoundFont(board[x][y]) + " ";
+                match = false;
+                for (String[] coords : coordinates) {
+                    if (Utils.arrContainsStr(coords, currentPos)) {
+                        output += words.get(coordinates.indexOf(coords)).getName().charAt(Utils.arrIndexOf(currentPos, coords)) + " ";
+                        match = true;
                     }
+                }
+                if (!match) {
+                    output += "-" + " ";
                 }
             }
             output += "\n";
@@ -102,10 +162,43 @@ public class Board {
         return output;
     }
 
-    /** updates placedWords to the current board **/
-    public void updatePlacedWords() {
-        placedWords = WordAdder.getPlacedWords();
-        Collections.shuffle(placedWords);
+    /** sets placedWords to a given value **/
+    public void setPlacedWords(ArrayList<Word> placedWords) {
+        this.placedWords = placedWords;
+    }
+
+    /** sets namesOfWords to a given value with all names of words capitalised **/
+    public void setNamesOfWords(ArrayList<String> namesOfWords) {
+        this.namesOfWords = Utils.sentenceCaseArrLst(namesOfWords);
+    }
+
+    /** updates namesOfWords to account for duplicates in placedWords **/
+    public void updateNamesOfWords() {
+        if ((placedWords.size() == 0) || (namesOfWords.size() == 0)) {
+            throw new IllegalArgumentException("Function has been called too early");
+        }
+        ArrayList<String> namesOfPlacedWords = new ArrayList<>();
+        for (Word word : placedWords) {
+            namesOfPlacedWords.add(word.getName());
+        }
+
+        int currentNameCount;
+        for (String name : namesOfWords) {
+            currentNameCount = 0;
+            for (Word word : placedWords) {
+                if (word.getName().equalsIgnoreCase(name.replaceAll(" ", ""))) {
+                    currentNameCount++;
+                }
+            }
+            if (currentNameCount == 0) {
+                throw new IllegalArgumentException(
+                        "currentNameCount should have been at least 1\n\tplacedWords: " + placedWords +
+                                "\n\tname: " + name + "\n\tnameOfWords: " + namesOfWords);
+            }
+            if (currentNameCount>1) {
+                name = name + " (x" + currentNameCount + ")";
+            }
+        }
     }
 
     /** returns the placedWords list **/

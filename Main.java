@@ -1,38 +1,71 @@
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Random;
+import java.util.Arrays;
 import java.util.Scanner;
 
 public class Main {
 
-    /** utility objects **/
+    /** allows user to input data **/
     private static final Scanner input = new Scanner(System.in);
-    private static final Random RANDOM = new Random();
 
     /** the number of words to find for the wordsearch **/
     private static final int wordsToFind = 15;
     /** the board **/
     private static Board board;
-    /** a list of all of the coordinates at which a letter of a found word is **/
-    private static ArrayList<String> foundPositions = new ArrayList<>();
 
     public static void main(String[] args) {
+        System.out.println("- W O R D S E A R C H E S -");
+
         ArrayList<String> words = getWords();
+        board = new Board(BoardMaker.makeWordsearch(words));
 
-        board = BoardMaker.makeWordsearch(words);
-        String[][] fullBoard = cloneArray(board.getBoard());
-
-        ArrayList<Word> solution = Solver.solve(board, board.getPlacedWords());
-        populateFoundPositions(solution);
+        String[][] fullBoard = Utils.clone2DArray(board.getBoard());
+        ArrayList<Word> solution = Solver.solve(board, words);
 
         Board finalBoard = new Board(fullBoard);
-        finalBoard.updatePlacedWords();
+        finalBoard.setPlacedWords(solution);
+        finalBoard.setNamesOfWords(words);
+        finalBoard.updateNamesOfWords();
         System.out.println(finalBoard.boardToString());
-        System.out.println("Here are the words to find:\n" + finalBoard.getPlacedWords());
-        System.out.println("\nPress enter to see the solution.");
-        String temp = input.nextLine();
-        System.out.println("Solution:\n" + finalBoard.getSolution());
+        userPlaying(finalBoard);
+        System.out.println("\nThanks for playing!");
+    }
+
+    /** lets the user request to see a word's position or see the solution and end the game **/
+    private static void userPlaying(Board finalBoard) {
+        String seeSolution = "???";
+        ArrayList<Word> matchedWords = new ArrayList<>();
+        while (true) {
+            System.out.println("Enter a word to see its position on the board.");
+            System.out.println("Type '" + seeSolution + "' to see the solution and end the game.");
+            String userInput = input.nextLine().strip().toUpperCase().replaceAll(" ", "");
+
+            if (userInput.equalsIgnoreCase(seeSolution)) {
+                System.out.println("\nHere is the solution:\n" + finalBoard.getSolution());
+                return;
+            }
+
+            ArrayList<String> placedWordsNames = new ArrayList<>();
+            for (Word placedWord : finalBoard.getPlacedWords()) {
+                placedWordsNames.add(placedWord.getName());
+            }
+
+            if (placedWordsNames.contains(userInput)) {
+                matchedWords.clear();
+                for (int i=0; i<finalBoard.getPlacedWords().size(); i++) {
+                    if (finalBoard.getPlacedWords().get(i).getName().equals(userInput)) {
+                        matchedWords.add(finalBoard.getPlacedWords().get(i));
+                    }
+                }
+                System.out.println(finalBoard.getSolutionOfWords(matchedWords));
+                System.out.println("Press enter to see full board again.");
+                String temp = input.nextLine();
+                System.out.println(finalBoard.boardToString());
+            } else {
+                System.err.println("Could not find the word: " + userInput);
+            }
+        }
     }
 
     /** gets the topic of the wordsearch from the user **/
@@ -43,7 +76,7 @@ public class Main {
             String topic = input.nextLine().strip().replaceAll(" ", "+");
             output = getWordsFromURL(topic);
 
-            if ((output.size() == 0) || someNonLetter(output)) {
+            if ((output.size() == 0) || (!allLetters(output))) {
                 System.err.println("Invalid input: " + topic + "\n");
             } else {
                 return output;
@@ -51,32 +84,19 @@ public class Main {
         }
     }
 
-    /** returns true if any character in a list of strings contains a non-alphabetic character and false otherwise **/
-    public static boolean someNonLetter(ArrayList<String> input) {
+    /** returns true if every character in a list of strings is a letter or a space, and false otherwise **/
+    public static boolean allLetters(ArrayList<String> input) {
         for (String str : input) {
             for (int i=0; i<str.length(); i++) {
                 if (str.charAt(i) == ' ') {
                     continue;
                 }
                 if (!Character.isLetter(str.charAt(i))) {
-                    return true;
+                    return false;
                 }
             }
         }
-        return false;
-    }
-
-    /** populates foundPositions **/
-    private static void populateFoundPositions(ArrayList<Word> solution) {
-        int[] currentXTrail, currentYTrail;
-        for (Word word : solution) {
-            currentXTrail = WordAdder.getXTrail(word);
-            currentYTrail = WordAdder.getYTrail(word);
-
-            for (int i=0; i<currentXTrail.length; i++) {
-                foundPositions.add(currentXTrail[i] + " " + currentYTrail[i]);
-            }
-        }
+        return true;
     }
 
     /** returns a list of words relating to a certain topic **/
@@ -123,15 +143,5 @@ public class Main {
         } catch (IOException e) {
             throw new IllegalArgumentException("Unable to retrieve data.");
         }
-    }
-
-    /** returns a deep copy of a 2D array **/
-    public static String[][] cloneArray(String[][] src) {
-        int length = src.length;
-        String[][] target = new String[length][src[0].length];
-        for (int i = 0; i < length; i++) {
-            System.arraycopy(src[i], 0, target[i], 0, src[i].length);
-        }
-        return target;
     }
 }

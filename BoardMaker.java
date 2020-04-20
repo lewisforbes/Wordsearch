@@ -29,7 +29,8 @@ public class BoardMaker {
     private static Board megaBoard;
 
     /** makes a wordsearch from a given list of words **/
-    public static Board makeWordsearch(ArrayList<String> allWordsStrs) {
+    public static String[][] makeWordsearch(ArrayList<String> givenAllWordsStrs) {
+        ArrayList<String> allWordsStrs = Utils.cloneStrArrLst(givenAllWordsStrs);
         separateWords(allWordsStrs);
         populateBoards();
 
@@ -50,8 +51,7 @@ public class BoardMaker {
 
         megaBoard.shuffle();
         megaBoard.strip();
-        megaBoard.updatePlacedWords();
-        return megaBoard;
+        return megaBoard.getBoard();
     }
 
     /** looks for places to include long words inside of otherwise complete wordsearch **/
@@ -145,8 +145,8 @@ public class BoardMaker {
                 try {
                     superSegments.add(joinBoardSegment(new ArrayList<>(boardSegments.subList(0, 4))));
                     superSegments.add(joinBoardSegment(new ArrayList<>(boardSegments.subList(4, 8))));
+                    superSegments.add(joinBoardSegment(new ArrayList<>(boardSegments.subList(8, 12))));
                     superSegments.add(joinBoardSegment(new ArrayList<>(boardSegments.subList(12, 16))));
-                    superSegments.add(joinBoardSegment(new ArrayList<>(boardSegments.subList(16, 20))));
                 } catch (Exception e) {}
 
                 output = joinBoardSegment(superSegments);
@@ -221,10 +221,12 @@ public class BoardMaker {
         if (longWords.size() != 0) {
             if (totalX < totalY) {
                 output = horizontalJoin(toJoin.get(0), wordToVBoard(longWords.get(0)));
+                longWords.remove(0);
                 output = horizontalJoin(output, toJoin.get(1));
                 return verticalJoin(output, boards.get(bigXIndex));
             } else {
                 output = verticalJoin(toJoin.get(0), wordToHBoard(longWords.get(0)));
+                longWords.remove(0);
                 output = verticalJoin(output, toJoin.get(1));
                 return horizontalJoin(output, boards.get(bigYIndex));
             }
@@ -240,8 +242,8 @@ public class BoardMaker {
         }
     }
 
-    private static Board join4Boards(ArrayList<Board> boards) { //TODO IMPROVE
-        Board temp = join2Boards(boards.get(1), boards.get(2));
+    private static Board join4Boards(ArrayList<Board> boards) { //TODO improve
+        Board temp = join2Boards(boards.get(0), boards.get(1));
         if (temp.xSize()>temp.ySize()) {
             return verticalJoin(temp, (horizontalJoin(boards.get(2), boards.get(3))));
         } else {
